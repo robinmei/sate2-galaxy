@@ -1,0 +1,437 @@
+<tool id="sateII" name="SATe II">
+    <description>Cleaning up menus with extraneous params</description>
+    <command interpreter="python">
+        run_sate.py -o `dirname $config_file` $config_file > $output $conf $tree $score
+    </command>
+    <inputs>
+        <param name="job" type="text" value="Job" label="Job name"/>
+        <param name="input" type="data" format="fasta" label="Input Sequence File"/>
+        <param name="multilocus" type="boolean" checked="false" truevalue="True" falsevalue="False" label="Multi-Locus Data?"/>
+        <param name="start_tree_search_from_current" type="boolean" truevalue="True" falsevalue="False" label="Start tree search from current" help="If selected, the tree from the previous iteration will be given to the tree searching tool as a starting tree."/>
+        <conditional name="start_tree_search_conditional">
+            <param name="start_tree_search_menu" type="select" label="Use treefile for initial alignment instead of sequence file?">
+                <option value="False"> NO </option>
+                <option value="True" > YES </option>
+            </param>
+            <when value="True" >
+                <param name="treefile" type="data" format="tre" label="Treefile"/>
+                <param name="aligned" type="hidden" value="False"/>
+            </when>
+            <when value="False" >
+                <param name="aligned" type="boolean" label="Aligned?" truevalue="True" falsevalue="False"/>
+                <param name="treefile" type="hidden" value=""/>
+            </when>
+        </conditional>
+        <param name="aligner" type="select" label="Aligner">
+            <option value="clustalw2" > CLUSTALW2 </option>
+            <option value="mafft" selected="true" > MAFFT </option>
+            <option value="prank" > PRANK </option>
+            <option value="opal.jar" > OPAL </option>
+        </param>
+        <conditional name="tree_estimator_conditional">
+            <param name="tree_estimator" type="select" label="Tree Estimator">
+                <option value="raxml" > RAXML </option>
+                <option value="fasttree" selected="true" > FASTTREE </option>
+            </param>
+            <when value="fasttree">
+                <conditional name="datatype_conditional">
+                    <param name="datatype" type="select" label="Data Type">
+                        <option value="DNA" selected="true"> DNA </option>
+                        <option value="RNA"> RNA </option>
+                        <option value="Protein"> Protein </option>
+                    </param>
+                    <when value="DNA">
+                        <param name="model" type="select" label="Model">
+                            <option value="-gtr -gamma" selected="true" > GTR+G20 </option>
+                            <option value="-gtr"> GTR+CAT </option>
+                            <option value="-gamma"> JC+G20 </option>
+                            <option value=""> JC+CAT </option>
+                        </param>
+                    </when>
+                    <when value="RNA">
+                        <param name="model" type="select" label="Model">
+                            <option value="-gtr -gamma" selected="true" > GTR+G20 </option>
+                            <option value="-gtr"> GTR+CAT </option>
+                            <option value="-gamma"> JC+G20 </option>
+                            <option value=""> JC+CAT </option>
+                        </param>
+                    </when>
+                    <when value="Protein">
+                        <param name="model" type="select" label="Model">
+                            <option value="-wag -gamma" selected="true" > WAG+CAT </option>
+                            <option value=""> JTT+CAT </option>
+                            <option value="-wag -gamma"> WAG+G20 </option>
+                            <option value="-gamma"> JTT+G20 </option>
+                        </param>
+                    </when>
+                </conditional>
+            </when>
+            <when value="raxml">
+                <conditional name="datatype_conditional">
+                    <param name="datatype" type="select" label="Data Type">
+                        <option value="DNA" selected="true"> DNA </option>
+                        <option value="RNA"> RNA </option>
+                        <option value="Protein"> Protein </option>
+                    </param>
+                    <when value="DNA">
+                        <param name="model" type="select" label="Model">
+                            <option value="GTRCAT" selected="true" > GTRCAT </option>
+                            <option value="GTRGAMMA"> GTRGAMMA </option>
+                            <option value="GTRGAMMAI"> GTRGAMMAI </option>
+                        </param>
+                    </when>
+                    <when value="RNA">
+                        <param name="model" type="select" label="Model">
+                            <option value="GTRCAT" selected="true" > GTRCAT </option>
+                            <option value="GTRGAMMA"> GTRGAMMA </option>
+                            <option value="GTRGAMMAI"> GTRGAMMAI </option>
+                        </param>
+                    </when>
+                    <when value="Protein">
+                        <param name="model" type="hidden" value="PROTCATJTT"/>
+                    </when>
+                </conditional>
+            </when>
+        </conditional>
+        <param name="raxml_search_after" type="boolean" checked="false" truevalue="True" falsevalue="False" label="Extra RAxML Search"/>
+        <conditional name="two_phase_conditional">
+            <param name="two_phase_menu" type="select" label="Do you want to run the Two-Phase Algorthm?" help="Selecting 'Yes' will cause SATe to only perform an initial alignment and tree search and return the results.">
+                <option value="True"> YES </option>
+                <option value="False" selected="true"> NO </option>
+            </param>
+            <when value="True">
+                <param name="two_phase" type="hidden" value="True" />
+                <conditional name="merger_conditional">
+                    <param name="merger_menu" type="select" label="Merger">
+                        <option value="muscle" > MUSCLE </option>
+                    </param>
+                    <when value="muscle">
+                        <param name="merger" type="hidden" value="muscle"/>
+                    </when>
+                </conditional>
+                <param name="max_subproblem_size" size="4" type="integer" value="15" min="1" max ="200" help="Range: 1-200" label="Max. Subproblem Size"/>
+                <conditional name="quick_set_conditional">
+                    <param name="quick_set_menu" type="select" label="Quick Set/Predefined Settings" >
+                        <option value="two_phase" > Two-phase </option>
+                    </param>
+                    <when value="two_phase">
+                        <conditional name="break_strategy_conditional">
+                            <param name="break_strategy_menu" type="select" label="Decomposition type" >
+                                <option value="centroid" > Centroid </option>
+                            </param>
+                            <when value="centroid">
+                                <param name="break_strategy" value="centroid" type="hidden"/>
+                            </when>
+                        </conditional>
+                        <conditional name="blind_mode_conditional" >
+                            <param name="blind_mode_menu" type="select" label="Blind Mode" >
+                                <option value="disable" selected="true" > Disabled </option>
+                            </param>
+                            <when value="disable">
+                                <param name="move_to_blind_on_worse_score" type="hidden" value="False" />
+                                <param name="time_limit" type="hidden" value="-1.0" />
+                                <param name="iter_limit" type="hidden" value="-1" />
+                                <conditional name="stop_conditional"> <!-- placeholders, all hidden -->
+                                    <param name="stop_menu" type="select" label="Stopping Options">
+                                        <option value="after_launch"> After Launch </option>
+                                    </param>
+                                    <when value="after_launch">
+                                        <param name="after_blind_time_term_limit" type="hidden" value="-1.0" />
+                                        <param name="after_blind_iter_term_limit" type="hidden" value="-1" />
+                                        <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                        <param name="after_blind_iter_without_imp_limit" type="hidden" value="-1" />
+                                    </when>
+                               </conditional>
+                            </when>
+                        </conditional>
+                        <conditional name="return_best_or_final_conditional">
+                            <param name="return_best_or_final_menu" type="select" label="Return">
+                                <option value="False" > Best Tree</option>
+                                <option value="True" > Final Tree </option>
+                            </param>
+                            <when value="True">
+                                <param name="return_final_tree_and_alignment" type="hidden" value="True"/>
+                            </when>
+                            <when value="False">
+                                <param name="return_final_tree_and_alignment" type="hidden" value="False"/>
+                            </when>
+                        </conditional>
+                    </when>
+                </conditional>
+            </when>
+            <when value="False">
+                    <param name="max_subproblem_size" size="4" type="integer" value="15" min="1" max ="200" help="Range: 1-200" label="Max. Subproblem Size"/>
+                    <conditional name="merger_conditional">
+                        <param name="merger_menu" type="select" label="Merger">
+                            <option value="muscle" > MUSCLE </option>
+                            <option value="opal" selected="true" > OPAL </option>
+                        </param>
+                        <when value="muscle">
+                            <param name="merger" type="hidden" value="muscle"/>
+                        </when>
+                        <when value="opal">
+                            <param name="merger" type="hidden" value="opal"/>
+                        </when>
+                    </conditional>
+                    <param name="two_phase" type="hidden" value="False" />
+                    <param name="raxml_search_after" type="boolean" checked="false" truevalue="True" falsevalue="False" label="Extra RAxML Search"/>
+                    <conditional name="quick_set_conditional">
+                        <param name="quick_set_menu" type="select" label="Quick Set/Predefined Settings" >
+                            <option value="sate-2-custom" > Custom </option>
+                            <option value="sate-2-fast" > SATe-II fast </option>
+                            <option value="sate-2-ML" > SATe-II ML </option>
+                            <option value="sate-2-simple" > SATe-II Simple </option>
+                        </param>
+                        <when value="sate-2-custom">
+                            <conditional name="break_strategy_conditional">
+                                <param name="break_strategy_menu" type="select" label="Decomposition type" >
+                                    <option value="centroid" > Centroid </option>
+                                    <option value="longest" > Longest </option>
+                                </param>
+                                <when value="centroid">
+                                    <param name="break_strategy" value="centroid" type="hidden"/>
+                                </when>
+                                <when value="longest">
+                                    <param name="break_strategy" value="longest" type="hidden"/>
+                                </when>
+                            </conditional>
+                            <conditional name="blind_mode_conditional" >
+                                <param name="blind_mode_menu" type="select" label="Blind Mode" >
+                                    <option value="disable" selected="true" > Disable </option>
+                                    <option value="enable"> Enable </option>
+                                </param>
+                                <when value="disable">
+                                    <param name="move_to_blind_on_worse_score" type="hidden" value="False" />
+                                    <param name="time_limit" type="float" optional="true" max ="72" help="Range: 0.01-72" label="Time Limit (hr)" value="-1"/>
+                                    <param name="iter_limit" type="integer" size="10" value="-1" optional="true" label="Iteration Limit" help="If less than 1, no limit will be used" />
+                                    <conditional name="stop_conditional"> <!-- placeholders, all hidden -->
+                                        <param name="stop_menu" type="select" label="Stopping Options">
+                                            <option value="after_launch"> After Launch </option>
+                                        </param>
+                                        <when value="after_launch">
+                                            <param name="after_blind_time_term_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_term_limit" type="hidden" value="-1" />
+                                            <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_without_imp_limit" type="hidden" value="-1" />
+                                        </when>
+                                   </conditional>
+                                </when>
+                                <when value="enable">
+                                    <param name="move_to_blind_on_worse_score" type="hidden" value="True" />
+                                    <param name="time_limit" type="hidden" value="-1.0" />
+                                    <param name="iter_limit" type="hidden" value="-1" />
+                                    <conditional name="stop_conditional">
+                                        <param name="stop_menu" type="select" label="Stopping Options">
+                                            <option value="after_launch"> After Launch </option>
+                                            <option value="after_last_improvement"> After Last Improvement </option>
+                                        </param>
+                                        <when value="after_launch">
+                                            <param name="after_blind_time_term_limit" type="float" optional="true" min="0.01" max ="72" help="Range: 0.01-72" label="Time Limit (hr)" />
+                                            <param name="after_blind_iter_term_limit" type="integer" size="10" value="-1" optional="true" label="Iteration Limit" help="If less than 1, no limit will be used" />
+                                            <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_without_imp_limit" type="hidden" value="-1" />
+                                        </when>
+                                        <when value="after_last_improvement">
+                                            <param name="after_blind_time_term_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_term_limit" type="hidden" value="-1" />
+                                            <param name="after_blind_time_without_imp_limit" type="float" optional="true" min="0.01" max ="72" help="Range: 0.01-72" label="Time Limit (hr)" />
+                                            <param name="after_blind_iter_without_imp_limit" type="integer" size="10" value="-1" optional="true" label="Iteration Limit" help="If less than 1, no limit will be used" />
+                                        </when>
+                                    </conditional>
+                                </when>
+                            </conditional>
+                            <conditional name="return_best_or_final_conditional">
+                                <param name="return_best_or_final_menu" type="select" label="Return">
+                                    <option value="False" > Best Tree</option>
+                                    <option value="True" > Final Tree </option>
+                                </param>
+                                <when value="True">
+                                    <param name="return_final_tree_and_alignment" type="hidden" value="True"/>
+                                </when>
+                                <when value="False">
+                                    <param name="return_final_tree_and_alignment" type="hidden" value="False"/>
+                                </when>
+                            </conditional>
+                        </when>
+                        <when value="sate-2-fast">
+                            <conditional name="break_strategy_conditional">
+                                <param name="break_strategy_menu" type="select" label="Decomposition type" >
+                                    <option value="centroid" > Centroid </option>
+                                </param>
+                                <when value="centroid">
+                                    <param name="break_strategy" value="centroid" type="hidden"/>
+                                </when>
+                            </conditional>
+                            <conditional name="blind_mode_conditional" >
+                                <param name="blind_mode_menu" type="select" label="Blind Mode" >
+                                    <option value="enable"> Enable </option>
+                                </param>
+                                    <when value="enable">
+                                    <param name="move_to_blind_on_worse_score" type="hidden" value="True" />
+                                    <param name="time_limit" type="hidden" value="-1.0" />
+                                    <param name="iter_limit" type="hidden" value="-1" />
+                                    <conditional name="stop_conditional">
+                                        <param name="stop_menu" type="select" label="Stopping Options">
+                                            <option value="after_last_improvement"> After Last Improvement </option>
+                                        </param>
+                                        <when value="after_last_improvement">
+                                            <param name="after_blind_time_term_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_term_limit" type="hidden" value="-1" />
+                                            <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_without_imp_limit" type="integer" size="10" value="1" optional="true" label="Iteration Limit" help="1 for SATe-II fast" />
+                                        </when>
+                                    </conditional>
+                                </when>
+                            </conditional>
+                            <conditional name="return_best_or_final_conditional">
+                                <param name="return_best_or_final_menu" type="select" label="Return">
+                                    <option value="False" > Best Tree</option>
+                                </param>
+                                <when value="False">
+                                    <param name="return_final_tree_and_alignment" type="hidden" value="False"/>
+                                </when>
+                            </conditional>
+                        </when>
+                        <when value="sate-2-ML">
+                            <conditional name="break_strategy_conditional">
+                                <param name="break_strategy_menu" type="select" label="Decomposition type" >
+                                    <option value="centroid" > Centroid </option>
+                                </param>
+                                <when value="centroid">
+                                    <param name="break_strategy" value="centroid" type="hidden"/>
+                                </when>
+                            </conditional>
+                            <conditional name="blind_mode_conditional" >
+                                <param name="blind_mode_menu" type="select" label="Blind Mode" >
+                                    <option value="enable"> Enable </option>
+                                </param>
+                                <when value="enable">
+                                    <param name="move_to_blind_on_worse_score" type="hidden" value="True" />
+                                    <param name="time_limit" type="hidden" value="-1.0" />
+                                    <param name="iter_limit" type="hidden" value="-1" />
+                                    <conditional name="stop_conditional">
+                                        <param name="stop_menu" type="select" label="Stopping Options">
+                                            <option value="after_launch"> After Launch </option>
+                                        </param>
+                                        <when value="after_launch">
+                                            <param name="after_blind_time_term_limit" type="hidden" value="-1" />
+                                            <param name="after_blind_iter_term_limit" type="integer" value="10" label="Iteration Limit" help="10 for SATe-II-ML" />
+                                            <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_without_imp_limit" type="hidden" value="-1" />
+                                        </when>
+                                    </conditional>
+                                </when>
+                            </conditional>
+                            <conditional name="return_best_or_final_conditional">
+                                <param name="return_best_or_final_menu" type="select" label="Return">
+                                    <option value="False" > Best Tree</option>
+                                </param>
+                                <when value="False">
+                                    <param name="return_final_tree_and_alignment" type="hidden" value="False"/>
+                                </when>
+                            </conditional>
+                        </when>
+                        <when value="sate-2-simple">
+                            <conditional name="break_strategy_conditional">
+                                <param name="break_strategy_menu" type="select" label="Decomposition type" >
+                                    <option value="centroid" > Centroid </option>
+                                </param>
+                                <when value="centroid">
+                                    <param name="break_strategy" value="centroid" type="hidden"/>
+                                </when>
+                            </conditional>
+                            <conditional name="blind_mode_conditional" >
+                                <param name="blind_mode_menu" type="select" label="Blind Mode" >
+                                    <option value="enable"> Enable </option>
+                                </param>
+                                <when value="enable">
+                                    <param name="move_to_blind_on_worse_score" type="hidden" value="True" />
+                                    <param name="time_limit" type="hidden" value="-1.0" />
+                                    <param name="iter_limit" type="hidden" value="-1" />
+                                    <conditional name="stop_conditional">
+                                        <param name="stop_menu" type="select" label="Stopping Options">
+                                            <option value="after_launch"> After Launch </option>
+                                        </param>
+                                        <when value="after_launch">
+                                            <param name="after_blind_time_term_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_term_limit" type="integer" size="10" value="10" optional="true" label="Iteration Limit" help="10 for SATe-II-simple" />
+                                            <param name="after_blind_time_without_imp_limit" type="hidden" value="-1.0" />
+                                            <param name="after_blind_iter_without_imp_limit" type="hidden" value="-1" />
+                                        </when>
+                                    </conditional>
+                                </when>
+                            </conditional>
+                            <conditional name="return_best_or_final_conditional">
+                                <param name="return_best_or_final_menu" type="select" label="Return">
+                                    <option value="True" > Final Tree</option>
+                                </param>
+                                <when value="True">
+                                    <param name="return_final_tree_and_alignment" type="hidden" value="True"/>
+                                </when>
+                            </conditional>
+                        </when>
+                    </conditional>
+                </when>
+    	</conditional>
+    </inputs>
+
+    <configfiles>
+        <configfile name="config_file">
+[commandline]
+aligned = ${start_tree_search_conditional.aligned}
+auto = False
+datatype = ${tree_estimator_conditional.datatype_conditional.datatype}
+input = ${input}
+job = sate
+keepalignmenttemps = False
+keeptemp = False
+multilocus = False
+raxml_search_after = ${raxml_search_after}
+two_phase =  ${two_phase_conditional.two_phase}
+untrusted = False
+treefile = ${start_tree_search_conditional.treefile}
+
+[sate]
+after_blind_iter_term_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.stop_conditional.after_blind_iter_term_limit}
+after_blind_time_term_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.stop_conditional.after_blind_time_term_limit}
+after_blind_time_without_imp_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.stop_conditional.after_blind_time_without_imp_limit}
+after_blind_iter_without_imp_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.stop_conditional.after_blind_iter_without_imp_limit}
+aligner = ${aligner}
+blind_mode_is_final = True
+break_strategy = ${two_phase_conditional.quick_set_conditional.break_strategy_conditional.break_strategy}
+iter_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.iter_limit}
+max_mem_mb = 2048
+max_subproblem_size = ${two_phase_conditional.max_subproblem_size}
+merger = ${two_phase_conditional.merger_conditional.merger}
+return_final_tree_and_alignment = ${two_phase_conditional.quick_set_conditional.return_best_or_final_conditional.return_final_tree_and_alignment}
+time_limit = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.time_limit}
+tree_estimator = ${tree_estimator_conditional.tree_estimator}
+blind_after_iter_without_imp = -1
+blind_after_time_without_imp = -1.0
+blind_after_total_iter = -1
+blind_after_total_time = -1.0
+iter_without_imp_limit = -1
+move_to_blind_on_worse_score = ${two_phase_conditional.quick_set_conditional.blind_mode_conditional.move_to_blind_on_worse_score}
+num_cpus = 1
+start_tree_search_from_current = ${start_tree_search_from_current}
+time_without_imp_limit = -1.0
+
+#if $tree_estimator_conditional.tree_estimator == "fasttree"
+[fasttree]
+model = ${tree_estimator_conditional.datatype_conditional.model}
+#elif $tree_estimator_conditional.tree_estimator == "raxml"
+[raxml]
+model = ${tree_estimator_conditional.datatype_conditional.model}
+#end if
+    </configfile>
+    </configfiles>
+
+<outputs>
+<data name="output" format="txt" label="${tool.name} ${job} on ${on_string}"/>
+<data name="conf" format="txt" from_work_dir="sate_temp_sate_config.txt" label="${tool.name} ${job} config file"/>
+<data name="tree" format="tre" from_work_dir="sate.tre" label="${tool.name} ${job} tree file"/>
+<data name="score" format="txt" from_work_dir="sate.score.txt" label="${tool.name} ${job} score"/>
+</outputs>
+	<help>
+	</help>
+</tool>

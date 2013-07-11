@@ -1,0 +1,15 @@
+Directions:
+
+Install galaxy
+Install sate_galaxy_dist in galaxy/tools
+It should contain:
+    Sate package
+    Sate xml (in same directory as run_sate.py, usually sate-core)
+Add path to sate.xml in tool_conf.xml
+I think it's easier to extract sate to the tools folder instead of having it installed elsewhere on the system
+    Has to do with path to dependencies, this installs them without having to modify .bash_rc
+    Also if they've already got sate on their machine, what's the point of galaxy right
+Installation
+    Identical on Mac/Unix, working fine
+    Windows will require cygwin (for run.sh)
+    Haven't gotten all the dependencies on the Windows machine yet
